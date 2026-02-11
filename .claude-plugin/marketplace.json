@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "review-plugin",
+      "name": "my-first-plugin",
       "source": {
         "source":"url",
-        "url":"https://github.com/Minamier/claude-plugins.git",
+        "url":"./plugins/my-first-plugin",
         "ref":"main"
       },
       "description": "Adds a /review skill for quick code reviews",
