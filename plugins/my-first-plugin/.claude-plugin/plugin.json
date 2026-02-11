@@ -1,6 +1,6 @@
 {
 "name": "my-first-plugin",
-"description": "这个只是测试插件，里面有个关于一般python和ps1的代码规范",
+"description": "这个只是测试插件，里面有个可视化代码库的官方案例",
 "version": "1.0.0",
 "author": {
 "name": "Vigoer"

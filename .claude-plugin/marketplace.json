@@ -7,7 +7,15 @@
     {
       "name": "my-first-plugin",
       "source": "./plugins/my-first-plugin",
-      "description": "Adds a /review skill for quick code reviews",
+      "version": "0.1.0",
+      "author":{
+        "name": "Vigoer"
+      },
+      "repository": "https://github.com/Minamier/claude-plugins.git"
+    },
+    {
+      "name": "base-tools",
+      "source": "./plugins/base-tools",
       "version": "0.1.0",
       "author":{
         "name": "Vigoer"
