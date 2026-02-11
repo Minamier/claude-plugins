@@ -13,6 +13,10 @@ description: 在编写代码时，确保Python文件使用UTF-8编码，PowerShe
 
 ## 执行步骤
 
+### 统一检查内容
+1. 函数使用大写，不带"_"，例如CheckPhoto而不是check_photo
+2. 参数使用小写或带"_"，例如photo_size,count,而不是PhotoSize,Photo_size或Count
+
 ### Python文件处理
 1. 使用UTF-8编码保存文件
 2. 在文件开头添加编码声明：`# -*- coding: utf-8 -*-`
