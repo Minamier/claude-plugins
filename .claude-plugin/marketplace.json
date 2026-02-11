@@ -6,11 +6,7 @@
   "plugins": [
     {
       "name": "my-first-plugin",
-      "source": {
-        "source":"url",
-        "url":"./plugins/my-first-plugin",
-        "ref":"main"
-      },
+      "source": "./plugins/my-first-plugin",
       "description": "Adds a /review skill for quick code reviews",
       "version": "0.1.0",
       "author":{
