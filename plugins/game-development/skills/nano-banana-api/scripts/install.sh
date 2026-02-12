@@ -31,8 +31,13 @@ check_python() {
 # 检查并创建配置文件
 check_config() {
     if [ ! -f ".env" ]; then
-        yellow ".env 配置文件不存在，正在创建..."
-        cat > .env <<'EOF'
+        yellow ".env 配置文件不存在，正在从模板创建..."
+        if [ -f "../.env.example" ]; then
+            cp "../.env.example" ".env"
+            green "已从 .env.example 创建 .env 配置文件"
+        else
+            # 如果没有模板文件，创建一个默认的
+            cat > .env <<'EOF'
 # Stability-AI API 密钥配置文件
 # 请在此处填写您的 Stability-AI API 密钥
 # API 密钥可从 https://beta.stability.ai/ 获取
@@ -56,6 +61,7 @@ DEFAULT_CFG_SCALE="7.5"
 # - stable-diffusion-512-v2-1（SD 512 模型）
 DEFAULT_ENGINE="stable-diffusion-xl-1024-v1-0"
 EOF
+        fi
     fi
 }
 
@@ -342,9 +348,9 @@ show_success() {
     green "=================================="
     echo
     blue "下一步操作："
-    echo "1. 编辑 .env 文件，添加您的 Stability-AI API 密钥"
-    echo "2. 启动 API 服务器：python stable_diffusion_api.py"
-    echo "3. 测试 API 功能：python -m pytest test_api.py"
+    echo "1. 编辑配置文件：./edit_config.sh"
+    echo "2. 启动 API 服务器：./start.sh"
+    echo "3. 测试 API 功能：./test.sh"
     echo
     yellow "API 密钥获取地址：https://beta.stability.ai/"
     echo

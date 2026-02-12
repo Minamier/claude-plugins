@@ -22,6 +22,30 @@ if not exist "stable_diffusion_api.py" (
     exit /b 1
 )
 
+REM 检查配置文件
+if not exist ".env" (
+    echo [错误] 未找到 .env 配置文件！
+    echo 请先运行 install.bat 进行安装
+    pause
+    exit /b 1
+)
+
+REM 检查 API 密钥是否已配置
+for /f "tokens=1,2 delims==" %%a in (.env) do (
+    if "%%a"=="STABILITY_API_KEY" (
+        set "API_KEY=%%b"
+    )
+)
+
+set "API_KEY=%API_KEY:"=%"
+if "%API_KEY%"=="" (
+    echo [错误] STABILITY_API_KEY 未配置！
+    echo 请先运行 edit_config.bat 配置 API 密钥
+    echo API 密钥可从 https://beta.stability.ai/ 获取
+    pause
+    exit /b 1
+)
+
 echo [信息] 正在启动 Nano Banana API 服务器...
 echo.
 echo 服务器配置：

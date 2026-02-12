@@ -13,7 +13,32 @@ description: 部署和管理 Stable Diffusion API 服务的技能。提供一键
 
 ### 快速部署
 
-#### 1. 依赖安装
+#### 1. 一键安装（推荐）
+
+```bash
+# Linux / macOS
+cd my-first-plugin/skills/nano-banana-api/scripts
+chmod +x install.sh edit_config.sh start.sh test.sh
+./install.sh
+
+# Windows
+cd my-first-plugin\skills\nano-banana-api\scripts
+install.bat
+```
+
+#### 2. 配置编辑器
+
+项目提供了专门的配置编辑脚本：
+
+```bash
+# Linux / macOS
+./edit_config.sh  # 自动打开系统默认编辑器
+
+# Windows
+edit_config.bat  # 使用记事本打开配置文件
+```
+
+#### 3. 依赖安装
 
 ```bash
 # 检查并安装 Python 依赖库
@@ -135,11 +160,16 @@ curl -X POST http://127.0.0.1:5000/txt2img \
 ```
 nano-banana-api/
 ├── SKILL.md                 # 技能文档（本文档）
+├── .env.example             # 配置文件模板
 ├── stable_diffusion_api.py  # API 服务器主程序
-├── .env                     # 配置文件
+├── .env                     # 配置文件（运行时创建）
 └── scripts/
     ├── install.sh           # 一键安装脚本
+    ├── install.bat          # Windows 安装脚本
     ├── start.sh             # 启动脚本
+    ├── start.bat            # Windows 启动脚本
+    ├── edit_config.sh       # 配置编辑器（Linux/macOS）
+    ├── edit_config.bat      # 配置编辑器（Windows）
     └── test.sh              # 测试脚本
 ```
 
@@ -172,13 +202,14 @@ nano-banana-api/
 
 **错误信息：**
 ```
-警告：未找到 Stability-AI API 密钥！
-请设置 STABILITY_API_KEY 环境变量，或在代码中直接设置。
-API 密钥可从 https://beta.stability.ai/ 获取。
+错误：STABILITY_API_KEY 未配置！
+请先编辑配置文件：./edit_config.sh
+API 密钥可从 https://beta.stability.ai/ 获取
 ```
 
 **解决方法：**
-- 在 .env 文件中设置 STABILITY_API_KEY
+- 运行 `./edit_config.sh`（Linux/macOS）或 `edit_config.bat`（Windows）打开配置文件
+- 在 .env 文件中设置 STABILITY_API_KEY 配置项
 - 或者在启动时使用 --api-key 参数
 - 访问 https://beta.stability.ai/ 获取 API 密钥
 

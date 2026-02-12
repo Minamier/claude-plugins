@@ -33,6 +33,27 @@ check_config() {
         red "请先运行安装脚本：./install.sh"
         exit 1
     fi
+
+    # 检查 API 密钥是否已配置
+    API_KEY=""
+    while IFS= read -r line; do
+        if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ "$line" != "" ]]; then
+            if [[ "$line" == *=* ]]; then
+                key=$(echo "$line" | cut -d'=' -f1 | tr -d '[:space:]')
+                value=$(echo "$line" | cut -d'=' -f2- | sed -e 's/^"//' -e 's/"$//' -e 's/^'\''//' -e 's/'\''$//')
+                if [ "$key" = "STABILITY_API_KEY" ]; then
+                    API_KEY="$value"
+                fi
+            fi
+        fi
+    done < .env
+
+    if [ -z "$API_KEY" ] || [ "$API_KEY" = "" ]; then
+        red "STABILITY_API_KEY 未配置！"
+        red "请先编辑配置文件：./edit_config.sh"
+        red "API 密钥可从 https://beta.stability.ai/ 获取"
+        exit 1
+    fi
 }
 
 # 检查主程序文件
@@ -297,9 +318,7 @@ main() {
     check_arguments "$@"
     check_running
     start_server
-    if [ -z "$BACKGROUND" ]; then
-        # 前台运行时不会显示成功信息，因为命令阻塞了
-    else
+    if [ -n "$BACKGROUND" ]; then
         show_success
     fi
 }
