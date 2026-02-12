@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(.install.bat)",
-      "Bash(powershell:*)"
-    ]
-  }
-}
