@@ -124,7 +124,7 @@ STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 if not STABILITY_API_KEY:
     print("警告：未找到 Stability-AI API 密钥！")
     print("请设置 STABILITY_API_KEY 环境变量，或在代码中直接设置。")
-    print("API 密钥可从 https://beta.stability.ai/ 获取。")
+    print("API 密钥可从 https://platform.stability.ai/获取。")
 
 # 初始化 Stability-AI 客户端
 stability_api = None
@@ -306,7 +306,7 @@ echo 1. 编辑配置文件：edit_config.bat
 echo 2. 启动 API 服务器：start.bat
 echo 3. 测试 API 功能：test.bat
 echo.
-echo API 密钥获取地址：https://beta.stability.ai/
+echo API 密钥获取地址：https://platform.stability.ai/
 echo.
 echo 服务器启动后，可以通过以下地址访问：
 echo  - 健康检查：http://127.0.0.1:5000/ping

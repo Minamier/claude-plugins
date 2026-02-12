@@ -68,7 +68,7 @@ def text_to_image():
     try:
         # 检查 API 密钥是否已配置
         if not STABILITY_API_KEY or not stability_api:
-            return jsonify({"error": "API 密钥未配置或无效"}), 500
+            return jsonify({"error": "未配置 Stability-AI API 密钥，请先在 .env 文件中配置 API 密钥"}), 500
 
         # 获取请求参数
         data = request.json
@@ -81,11 +81,11 @@ def text_to_image():
         samples = data.get("samples", 1)
 
         if not prompt:
-            return jsonify({"error": "缺少必要参数：prompt"}), 400
+            return jsonify({"error": "缺少必要参数：请提供要生成的图像描述（prompt）"}), 400
 
         # 验证尺寸（必须是 64 的倍数）
         if width % 64 != 0 or height % 64 != 0:
-            return jsonify({"error": "尺寸必须是 64 的倍数"}), 400
+            return jsonify({"error": "图像尺寸不符合要求，宽度和高度必须是 64 的倍数"}), 400
 
         # 直接使用字符串列表而不是复杂的 Prompt 对象
         if negative_prompt:
@@ -112,7 +112,7 @@ def text_to_image():
         for resp in answers:
             for artifact in resp.artifacts:
                 if artifact.finish_reason == generation.FILTER:
-                    images.append({"error": "图像内容不符合安全规范"})
+                    images.append({"error": "图像内容不符合安全规范，请尝试调整提示词"})
                 elif artifact.type == generation.ARTIFACT_IMAGE:
                     img = Image.open(BytesIO(artifact.binary))
                     # 将图像转换为 base64 字符串
@@ -130,7 +130,7 @@ def text_to_image():
 
     except Exception as e:
         print(f"生成图像时出错：{e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"生成图像时发生错误：{str(e)}，请稍后重试"}), 500
 
 
 if __name__ == "__main__":
@@ -168,21 +168,24 @@ if __name__ == "__main__":
     if args.api_key:
         STABILITY_API_KEY = args.api_key
 
-    # 再次尝试初始化客户端（如果之前失败）
-    if not STABILITY_API_KEY:
-        print("错误：未找到 Stability-AI API 密钥！")
-        print("请使用 --api-key 参数或设置 STABILITY_API_KEY 环境变量。")
-        sys.exit(1)
-
-    try:
-        stability_api = client.StabilityInference(
-            key=STABILITY_API_KEY,
-            verbose=True,
-            engine="stable-diffusion-xl-1024-v1-0",
-        )
-    except Exception as e:
-        print(f"初始化 Stability-AI 客户端失败：{e}")
-        sys.exit(1)
+    # 尝试初始化客户端（但不强制要求成功）
+    # 注意：不使用 global 声明，因为我们已经在全局作用域中定义了这个变量
+    if STABILITY_API_KEY:
+        try:
+            stability_api = client.StabilityInference(
+                key=STABILITY_API_KEY,
+                verbose=True,
+                engine="stable-diffusion-xl-1024-v1-0",
+            )
+            print("Stability-AI 客户端初始化成功")
+        except Exception as e:
+            print(f"初始化 Stability-AI 客户端失败：{e}")
+            stability_api = None
+    else:
+        print("警告：未配置 Stability-AI API 密钥")
+        print("API 服务仍会启动，但图像生成功能将无法使用")
+        print("请在 .env 文件中配置 STABILITY_API_KEY 或使用 --api-key 参数")
+        stability_api = None
 
     print(f"Stable Diffusion API 服务启动成功！")
     print(f"监听地址：http://{args.host}:{args.port}")

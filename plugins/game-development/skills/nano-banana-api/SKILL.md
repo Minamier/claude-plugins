@@ -314,7 +314,7 @@ curl -X POST http://127.0.0.1:5000/txt2img \
 
 ## 相关资源
 
-- [Stability AI 官方文档](https://stability.ai/docs/)
+- [Stability AI 官方文档](https://platform.stability.ai/docs/api-reference#tag/Generate/paths/~1v2beta~1stable-image~1generate~1ultra/post)
 - [Flask 框架文档](https://flask.palletsprojects.com/)
 - [Python 图像库文档](https://pillow.readthedocs.io/)
 - [API 开发最佳实践](https://blog.postman.com/rest-api-best-practices/)
