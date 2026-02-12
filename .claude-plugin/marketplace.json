@@ -21,6 +21,15 @@
         "name": "Vigoer"
       },
       "repository": "https://github.com/Minamier/claude-plugins.git"
+    },
+    {
+      "name": "game-development",
+      "source": "./plugins/game-development",
+      "version": "0.1.0",
+      "author":{
+        "name": "Vigoer"
+      },
+      "repository": "https://github.com/Minamier/claude-plugins.git"
     }
   ]
   
