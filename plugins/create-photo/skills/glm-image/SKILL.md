@@ -45,11 +45,10 @@ edit_config.bat
 
 ```env
 # GLM Image API 配置文件
-# 请在此处填写您的火山引擎API密钥
+# 请在此处填写您的智谱GLM API密钥
 # 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 获取 API 密钥
 
 GLM_API_KEY=""
-GLM_API_SECRET=""
 
 # 图像生成配置（默认值）
 DEFAULT_WIDTH="1024"
@@ -132,8 +131,7 @@ glm-image/
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
-| GLM_API_KEY | 火山引擎API密钥 | None |
-| GLM_API_SECRET | 火山引擎API密钥密码 | None |
+| GLM_API_KEY | 智谱GLM API密钥 | None |
 
 ### 图像生成配置
 
@@ -150,10 +148,10 @@ glm-image/
 ## 图片保存路径
 
 ### 默认保存路径
-技能默认将生成的图片保存到桌面的 `OUT_ai_photo` 文件夹中。路径格式如下：
-- Windows系统：`C:\Users\<用户名>\Desktop\OUT_ai_photo\`
-- macOS系统：`/Users/<用户名>/Desktop/OUT_ai_photo/`
-- Linux系统：`/home/<用户名>/Desktop/OUT_ai_photo/`
+技能默认将生成的图片保存到当前工作区根目录下的 `OUT_ai_photo` 文件夹中。路径格式如下：
+- Windows系统：`<工作区根目录>\OUT_ai_photo\`
+- macOS系统：`<工作区根目录>/OUT_ai_photo/`
+- Linux系统：`<工作区根目录>/OUT_ai_photo/`
 
 ### 主动修改图片路径
 用户可以通过 `--output` 参数主动修改图片的保存路径：
@@ -188,40 +186,38 @@ GLM Image API 官方允许的图像最大尺寸为 2^21 像素（约200万像素
 
 ## 使用方法
 
-### 命令行接口
+### 判断GLM_API_KEY是否输入
+程序会自动检查.env文件，如果GLM_API_KEY为空，会提示用户输入并更新.env文件。
 
-#### 判断GLM_API_KEY是否输入
-查看.env文件，若GLM_API_KEY和GLM_API_SECRET为空则按照常见错误第一条处理
+### 直接生成图像
 
-
-#### 直接生成图像
-
+用户没有提供保存路径时（默认保存到工作区根目录的OUT_ai_photo文件夹）：
 ```bash
-python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024
+python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫"
 ```
 
-#### 启动服务器
-
+用户提供保存路径时：
 ```bash
-python glm_image_api.py server --host 0.0.0.0 --port 5001
+python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫" --output "d:\my_images"
 ```
 
 ### 服务器模式
 
-启动服务器后，可以通过 HTTP API 进行访问：
-
+启动API服务器：
 ```bash
-# 健康检查
-curl http://127.0.0.1:5001/ping
-
-# 生成图像
-curl -X POST http://127.0.0.1:5001/txt2img -H "Content-Type: application/json" -d '{
-  "prompt": "一只可爱的卡通猫",
-  "style": "卡通",
-  "width": 1024,
-  "height": 1024
-}'
+python glm_image_api.py server --host 0.0.0.0 --port 5001
 ```
+
+### 使用示例
+
+生成一张英雄联盟中影流之主劫的照片：
+```bash
+python glm_image_api.py generate "英雄联盟 LOL 中的影流之主 劫，全身像，高质量，4K，游戏风格，黑色和红色为主色调" --style "写实" --width 1024 --height 1024 --filename "LOL劫"
+```
+
+### save_png_from_url.py生成png
+
+
 
 ## 常见问题
 
@@ -230,13 +226,48 @@ curl -X POST http://127.0.0.1:5001/txt2img -H "Content-Type: application/json" -
 **错误信息：**
 
 ```
-错误：GLM_API_KEY 未配置！
-
+WARN   GLM_API_KEY 未配置！
 ```
 
 **解决方法：**
-- 告知用户未配置GLM_API_KEY，解释本次对话并告知用户下次对话应输入包括api_key的信息
+- 程序会提示用户输入API密钥，并自动更新到.env文件中
 - 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 获取 API 密钥
+
+### 2. 服务器无法启动
+
+**错误信息：**
+```
+OSError: [Errno 48] Address already in use
+```
+
+**解决方法：**
+- 使用不同的端口号：`--port 5002`
+- 检查端口是否被其他程序占用
+- 或者关闭占用端口的程序
+
+### 3. 图像生成失败
+
+**错误信息：**
+```
+Unauthorized: Incorrect API key provided
+```
+
+**解决方法：**
+- 检查 API 密钥是否正确
+- 确认 API 密钥是否已过期
+- 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 确认 API 密钥状态
+
+### 4. 保存路径错误
+
+**错误信息：**
+```
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+```
+
+**解决方法：**
+- 确保使用最新版本的代码
+- 程序会自动处理未提供路径的情况
+- 或者明确指定输出路径：`--output "d:\my_images"`
 
 ### 2. 服务器无法启动
 

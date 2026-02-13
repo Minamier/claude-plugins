@@ -20,30 +20,16 @@ def save_png_from_url(image_url, photo_id, keywords, output_dir=None):
         image_url: 图像下载URL
         photo_id: 图像的唯一标识符
         keywords: 图像的关键词（用于文件名）
-        output_dir: 输出目录（默认：桌面/OUT_ai_photo）
+        output_dir: 输出目录（默认：当前工作区根目录/OUT_ai_photo）
 
     Returns:
         str: 保存的文件路径
     """
-    # 默认保存路径为桌面/OUT_ai_photo
+    # 默认保存路径为当前工作区根目录/OUT_ai_photo
     if output_dir is None:
-        if os.name == 'nt':  # Windows系统
-            desktop_path = os.path.join(os.environ['USERPROFILE'], 'Desktop')
-        else:  # macOS和Linux系统
-            desktop_path = os.path.join(os.environ['HOME'], 'Desktop')
-        output_dir = os.path.join(desktop_path, 'OUT_ai_photo')
-    """
-    从GLM Image API返回的URL下载图像并保存
-
-    Args:
-        image_url: 图像下载URL
-        photo_id: 图像的唯一标识符
-        keywords: 图像的关键词（用于文件名）
-        output_dir: 输出目录（默认：output）
-
-    Returns:
-        str: 保存的文件路径
-    """
+        # 获取当前工作区根目录（my-marketplace）
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+        output_dir = os.path.join(root_path, 'OUT_ai_photo')
     try:
         # 确保输出目录存在
         output_path = Path(output_dir)
@@ -52,7 +38,10 @@ def save_png_from_url(image_url, photo_id, keywords, output_dir=None):
         # 生成文件名
         # 使用关键词和照片ID的后四位
         id_suffix = photo_id[-4:] if photo_id else "0001"
-        filename = f"{keywords}_{id_suffix}.png"
+        if keywords:
+            filename = f"{keywords}_{id_suffix}.png"
+        else:
+            filename = f"{id_suffix}.png"
         save_path = output_path / filename
 
         print(f"📦 正在下载图像: {image_url}")
@@ -83,30 +72,16 @@ def save_image_from_dict(image_data, photo_id, keywords, output_dir=None):
         image_data: 包含图像信息的字典（来自generate_image的返回）
         photo_id: 图像的唯一标识符
         keywords: 图像的关键词（用于文件名）
-        output_dir: 输出目录（默认：桌面/OUT_ai_photo）
+        output_dir: 输出目录（默认：当前工作区根目录/OUT_ai_photo）
 
     Returns:
         str: 保存的文件路径
     """
-    # 默认保存路径为桌面/OUT_ai_photo
+    # 默认保存路径为当前工作区根目录/OUT_ai_photo
     if output_dir is None:
-        if os.name == 'nt':  # Windows系统
-            desktop_path = os.path.join(os.environ['USERPROFILE'], 'Desktop')
-        else:  # macOS和Linux系统
-            desktop_path = os.path.join(os.environ['HOME'], 'Desktop')
-        output_dir = os.path.join(desktop_path, 'OUT_ai_photo')
-    """
-    从generate_image返回的字典中保存图像（支持base64和url）
-
-    Args:
-        image_data: 包含图像信息的字典（来自generate_image的返回）
-        photo_id: 图像的唯一标识符
-        keywords: 图像的关键词（用于文件名）
-        output_dir: 输出目录（默认：output）
-
-    Returns:
-        str: 保存的文件路径
-    """
+        # 获取当前工作区根目录（my-marketplace）
+        root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+        output_dir = os.path.join(root_path, 'OUT_ai_photo')
     try:
         if image_data.get("base64"):
             print(f"📦 使用base64数据保存图像")
@@ -117,7 +92,10 @@ def save_image_from_dict(image_data, photo_id, keywords, output_dir=None):
             output_path.mkdir(exist_ok=True)
 
             id_suffix = photo_id[-4:] if photo_id else "0001"
-            filename = f"{keywords}_{id_suffix}.png"
+            if keywords:
+                filename = f"{keywords}_{id_suffix}.png"
+            else:
+                filename = f"{id_suffix}.png"
             save_path = output_path / filename
 
             img.save(save_path, "PNG")

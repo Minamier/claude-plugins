@@ -6,8 +6,6 @@ GLM Image API 服务器
 
 import os
 import sys
-import json
-import base64
 import argparse
 import requests
 from dotenv import load_dotenv
@@ -43,6 +41,19 @@ def load_config(interactive=True):
 
     # 检查API密钥
     api_key = os.getenv("GLM_API_KEY")
+
+    # 对于帮助命令等不需要API密钥的操作，直接返回默认配置
+    if "--help" in sys.argv or "-h" in sys.argv:
+        config = {
+            "api_key": "",
+            "default_width": int(os.getenv("DEFAULT_WIDTH", "1024")),
+            "default_height": int(os.getenv("DEFAULT_HEIGHT", "1024")),
+            "default_model": os.getenv("DEFAULT_MODEL", "glm-image"),
+            "default_style": os.getenv("DEFAULT_STYLE", "写实"),
+            "server_host": os.getenv("SERVER_HOST", "127.0.0.1"),
+            "server_port": int(os.getenv("SERVER_PORT", "5001"))
+        }
+        return config
 
     if not api_key or api_key.strip() == "":
         if interactive:
@@ -107,7 +118,6 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
     Returns:
         (list, str, str): 图像数据列表，状态信息，照片ID
     """
-    """生成图像"""
     if config is None:
         load_config()
 
@@ -207,10 +217,43 @@ def txt2img():
 
 def main():
     """主函数"""
-    # 先加载配置
-    if load_config() is None:
-        print("配置失败，程序退出")
-        return 1
+    # 检查是否是config子命令
+    is_config_command = False
+    for arg in sys.argv:
+        if "config" in arg:
+            is_config_command = True
+            break
+
+    # 对于config子命令，只进行基础配置，不检查API密钥
+    if is_config_command:
+        global config
+        if not ENV_FILE.exists():
+            if ENV_EXAMPLE_FILE.exists():
+                with open(ENV_EXAMPLE_FILE, "r", encoding="utf-8") as f:
+                    config_content = f.read()
+                with open(ENV_FILE, "w", encoding="utf-8") as f:
+                    f.write(config_content)
+                print("OK 已创建配置文件: .env (从 .env.example 复制)")
+            else:
+                print("ERROR 配置文件模板不存在: .env.example")
+                sys.exit(1)
+
+        load_dotenv(ENV_FILE)
+
+        config = {
+            "api_key": "",
+            "default_width": int(os.getenv("DEFAULT_WIDTH", "1024")),
+            "default_height": int(os.getenv("DEFAULT_HEIGHT", "1024")),
+            "default_model": os.getenv("DEFAULT_MODEL", "glm-image"),
+            "default_style": os.getenv("DEFAULT_STYLE", "写实"),
+            "server_host": os.getenv("SERVER_HOST", "127.0.0.1"),
+            "server_port": int(os.getenv("SERVER_PORT", "5001"))
+        }
+    else:
+        # 其他命令需要完整配置
+        if load_config() is None:
+            print("配置失败，程序退出")
+            return 1
 
     parser = argparse.ArgumentParser(
         description="GLM Image API - 使用字节跳动GLM模型生成图像"
@@ -242,8 +285,10 @@ def main():
                            help=f"图像风格 (默认: {config['default_style']})")
     generate_parser.add_argument("--samples", type=int, default=1,
                            help="生成数量 (默认: 1)")
-    generate_parser.add_argument("--output", type=str, default="output",
-                           help="输出目录 (默认: output)")
+    generate_parser.add_argument("--output", type=str, default=None,
+                           help="输出目录 (默认: 桌面/OUT_ai_photo)")
+    generate_parser.add_argument("--filename", type=str, default=None,
+                           help="指定文件名 (默认: 使用照片ID)")
 
     # 配置管理
     config_parser = subparsers.add_parser("config", help="配置管理")
@@ -286,17 +331,20 @@ def main():
             # 导入save_png_from_url模块
             import save_png_from_url
 
-            # 根据提示词提取关键词（AI判断）
-            keywords = extract_keywords(args.prompt)
+            # 使用指定的文件名
+            keywords = args.filename if args.filename else ""
 
             # 保存图像
-            output_dir = Path(args.output)
-            output_dir.mkdir(exist_ok=True)
+            output_dir = args.output
 
             for i, img in enumerate(images):
-                saved_path = save_png_from_url.save_image_from_dict(img, photo_id, keywords, str(output_dir))
+                saved_path = save_png_from_url.save_image_from_dict(img, photo_id, keywords, output_dir)
 
             print(f"✅ 图像生成完成！共生成 {len(images)} 张图像")
+            if keywords:
+                print(f"📦 文件名: {keywords}")
+            if photo_id:
+                print(f"🆔 照片ID: {photo_id}")
         else:
             print(f"ERROR  图像生成失败: {status}")
 
@@ -319,35 +367,6 @@ def main():
     else:
         parser.print_help()
 
-def extract_keywords(prompt):
-    """
-    提取关键词（不超过5个字）
-
-    Args:
-        prompt: 用户输入的提示词
-
-    Returns:
-        str: 提取的关键词（不超过5个字）
-    """
-    # AI智能提取关键词
-    import re
-
-    # 常见核心词汇优先匹配列表
-    priority_keywords = ["福字", "春联", "灯笼", "鞭炮", "年夜饭", "压岁钱", "春晚"]
-
-    # 去除标点符号和空格
-    cleaned_prompt = re.sub(r'[^\u4e00-\u9fff]', '', prompt)
-
-    # 优先匹配常见核心词汇
-    for kw in priority_keywords:
-        if kw in cleaned_prompt:
-            return kw[:5]
-
-    # 如果没有匹配到常见核心词汇，使用默认方法提取
-    if cleaned_prompt:
-        return cleaned_prompt[:5]
-
-    return "图像"
 
 if __name__ == "__main__":
     # 设置控制台编码为UTF-8

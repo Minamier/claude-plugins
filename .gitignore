@@ -26,3 +26,4 @@ yarn-error.log*
 
 # other
 plugins/create-photo/skills/glm-image/output
+OUT_ai_photo/
