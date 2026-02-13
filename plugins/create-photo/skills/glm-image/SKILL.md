@@ -46,7 +46,7 @@ edit_config.bat
 ```env
 # GLM Image API 配置文件
 # 请在此处填写您的火山引擎API密钥
-# 访问 https://console.volcengine.com/ 获取 API 密钥
+# 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 获取 API 密钥
 
 GLM_API_KEY=""
 GLM_API_SECRET=""
@@ -78,16 +78,19 @@ curl -X GET http://127.0.0.1:5001/ping
 ### 文本生成图像
 
 ```bash
-curl -X POST http://127.0.0.1:5001/txt2img \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "一只可爱的卡通猫，白色背景",
-    "negative_prompt": "模糊，低质量，丑陋",
-    "width": 1024,
-    "height": 1024,
-    "model": "cogview-3",
-    "style": "卡通"
-  }'
+  curl --request POST \
+  --url https://open.bigmodel.cn/api/paas/v4/images/generations \
+  --header 'Authorization: Bearer {此处填API-KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '
+{
+  "model": "glm-image",
+  "prompt": {此处为用户需要生成图片的要求},
+  "size": "{此处为图片大小}",
+  "watermark_enabled": {此处为是否要水印},
+  "quality": "hd"
+}
+'
 ```
 
 **响应：**
@@ -146,6 +149,10 @@ glm-image/
 
 ### 命令行接口
 
+#### 判断GLM_API_KEY是否输入
+查看.env文件，若GLM_API_KEY和GLM_API_SECRET为空则按照常见错误第一条处理
+
+
 #### 直接生成图像
 
 ```bash
@@ -180,16 +187,15 @@ curl -X POST http://127.0.0.1:5001/txt2img -H "Content-Type: application/json" -
 ### 1. API 密钥未配置
 
 **错误信息：**
+
 ```
 错误：GLM_API_KEY 未配置！
-请先运行配置编辑器：./edit_config.sh（Linux/macOS）或 edit_config.bat（Windows）
-API 密钥可从 https://console.volcengine.com/ 获取
+
 ```
 
 **解决方法：**
-- 运行 `./edit_config.sh`（Linux/macOS）或 `edit_config.bat`（Windows）打开配置文件
-- 在 `.env` 文件中设置 `GLM_API_KEY` 和 `GLM_API_SECRET` 配置项
-- 访问 https://console.volcengine.com/ 获取 API 密钥
+- 告知用户未配置GLM_API_KEY，解释本次对话并告知用户下次对话应输入包括api_key的信息
+- 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 获取 API 密钥
 
 ### 2. 服务器无法启动
 
@@ -213,7 +219,7 @@ Unauthorized: Incorrect API key provided
 **解决方法：**
 - 检查 API 密钥是否正确
 - 确认 API 密钥是否已过期
-- 访问 https://console.volcengine.com/ 确认 API 密钥状态
+- 访问 https://bigmodel.cn/usercenter/proj-mgmt/apikeys/ 确认 API 密钥状态
 
 ## 安全考虑
 
@@ -279,7 +285,7 @@ DEFAULT_MODEL = "cogview-3"
 ## 相关资源
 
 - [GLM图像生成API文档](https://docs.bigmodel.cn/api-reference/模型-api/图像生成)
-- [火山引擎控制台](https://console.volcengine.com/)
+- [火山引擎控制台](https://bigmodel.cn/usercenter/proj-mgmt/apikeys/)
 - [Python 官方文档](https://docs.python.org/)
 - [Flask 框架文档](https://flask.palletsprojects.com/)
 

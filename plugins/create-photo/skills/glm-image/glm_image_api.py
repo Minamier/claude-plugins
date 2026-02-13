@@ -43,7 +43,6 @@ def load_config(interactive=True):
 
     # 检查API密钥
     api_key = os.getenv("GLM_API_KEY")
-    api_secret = os.getenv("GLM_API_SECRET")
 
     if not api_key or api_key.strip() == "":
         if interactive:
@@ -55,28 +54,14 @@ def load_config(interactive=True):
                 print("ERROR 无法获取输入，请手动配置API密钥")
                 return None
         else:
-            print("WARN   GLM_API_KEY 未配置，请运行配置命令: python glm_image_api.py config set-key YOUR_API_KEY YOUR_API_SECRET")
-            return None
-
-    if not api_secret or api_secret.strip() == "":
-        if interactive:
-            print("WARN   GLM_API_SECRET 未配置！")
-            try:
-                api_secret = input("请输入您的GLM API Secret: ").strip()
-                update_config("GLM_API_SECRET", api_secret)
-            except EOFError:
-                print("ERROR 无法获取输入，请手动配置API密钥")
-                return None
-        else:
-            print("WARN   GLM_API_SECRET 未配置，请运行配置命令: python glm_image_api.py config set-key YOUR_API_KEY YOUR_API_SECRET")
+            print("WARN   GLM_API_KEY 未配置，请运行配置命令: python glm_image_api.py config set-key YOUR_API_KEY")
             return None
 
     config = {
         "api_key": api_key,
-        "api_secret": api_secret,
         "default_width": int(os.getenv("DEFAULT_WIDTH", "1024")),
         "default_height": int(os.getenv("DEFAULT_HEIGHT", "1024")),
-        "default_model": os.getenv("DEFAULT_MODEL", "cogview-3"),
+        "default_model": os.getenv("DEFAULT_MODEL", "glm-image"),
         "default_style": os.getenv("DEFAULT_STYLE", "写实"),
         "server_host": os.getenv("SERVER_HOST", "127.0.0.1"),
         "server_port": int(os.getenv("SERVER_PORT", "5001"))
@@ -106,65 +91,50 @@ def update_config(key, value):
 
     print(f"OK 配置 {key} 已更新")
 
-def get_access_token():
-    """获取访问令牌"""
-    if config is None:
-        load_config()
-
-    url = "https://aip.baidubce.com/oauth/2.0/token"
-    params = {
-        "grant_type": "client_credentials",
-        "client_id": config["api_key"],
-        "client_secret": config["api_secret"]
-    }
-
-    try:
-        response = requests.post(url, params=params, timeout=30)
-        if response.status_code == 200:
-            result = response.json()
-            if "access_token" in result:
-                return result["access_token"]
-            else:
-                print(f"ERROR 无法获取访问令牌: {result}")
-                return None
-        else:
-            print(f"ERROR API 请求失败: 状态码 {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"ERROR  请求异常: {str(e)}")
-        return None
-
 def generate_image(prompt, negative_prompt="", width=1024, height=1024,
-                  model="cogview-3", style="写实", samples=1):
+                  model="glm-image", style="写实", samples=1):
     """生成图像"""
     if config is None:
         load_config()
 
-    access_token = get_access_token()
-    if not access_token:
-        return None, "无法获取访问令牌"
+    url = "https://open.bigmodel.cn/api/paas/v4/images/generations"
 
-    url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/image2text/text2image?access_token={access_token}"
-
-    payload = {
-        "prompt": prompt,
-        "negative_prompt": negative_prompt,
-        "width": width,
-        "height": height,
-        "model": model,
-        "style": style,
-        "samples": samples
+    # 构建请求头
+    headers = {
+        "Authorization": f"Bearer {config['api_key']}",
+        "Content-Type": "application/json"
     }
 
+    # 构建请求数据
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "size": f"{width}x{height}",
+        "watermark_enabled": False,
+        "quality": "standard",
+        "user_id": "Viguer"
+    }
+
+    # 可选参数
+    if negative_prompt:
+        payload["negative_prompt"] = negative_prompt
+    if samples > 1:
+        payload["n"] = samples
+
     try:
-        response = requests.post(url, json=payload, timeout=60)
+        response = requests.post(url, json=payload, headers=headers, timeout=60)
         if response.status_code == 200:
             result = response.json()
 
             if "data" in result:
                 images = []
                 for item in result["data"]:
-                    if "b64_image" in item:
+                    if "url" in item:
+                        images.append({
+                            "base64": None,
+                            "url": item["url"]
+                        })
+                    elif "b64_image" in item:
                         images.append({
                             "base64": item["b64_image"],
                             "url": None
@@ -175,7 +145,7 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
                 error_msg = result.get("error_msg", "未知错误")
                 return None, error_msg
         else:
-            return None, f"API 请求失败: 状态码 {response.status_code}"
+            return None, f"API 请求失败: 状态码 {response.status_code} - {response.text}"
     except Exception as e:
         return None, f"请求异常: {str(e)}"
 
@@ -219,13 +189,45 @@ def txt2img():
     except Exception as e:
         return jsonify({"error": f"请求处理失败: {str(e)}"}), 500
 
-def save_image(b64_image, output_path):
+def save_image(image_data, output_path):
     """保存图像到文件"""
     try:
-        image_data = base64.b64decode(b64_image)
-        with open(output_path, "wb") as f:
-            f.write(image_data)
-        return True
+        if isinstance(image_data, dict):
+            # 如果是字典，可能包含 base64 或 url
+            if image_data.get("base64"):
+                img_data = base64.b64decode(image_data["base64"])
+                with open(output_path, "wb") as f:
+                    f.write(img_data)
+                return True
+            elif image_data.get("url"):
+                # 从 URL 下载图像
+                response = requests.get(image_data["url"], timeout=30)
+                if response.status_code == 200:
+                    with open(output_path, "wb") as f:
+                        f.write(response.content)
+                    return True
+                else:
+                    print(f"ERROR  下载图像失败: 状态码 {response.status_code}")
+                    return False
+        elif isinstance(image_data, str):
+            # 假设是 base64 字符串
+            if image_data.startswith("http"):
+                # 是 URL，下载图像
+                response = requests.get(image_data, timeout=30)
+                if response.status_code == 200:
+                    with open(output_path, "wb") as f:
+                        f.write(response.content)
+                    return True
+                else:
+                    print(f"ERROR  下载图像失败: 状态码 {response.status_code}")
+                    return False
+            else:
+                # 是 base64 字符串
+                img_data = base64.b64decode(image_data)
+                with open(output_path, "wb") as f:
+                    f.write(img_data)
+                return True
+
     except Exception as e:
         print(f"ERROR  保存图像失败: {str(e)}")
         return False
@@ -278,7 +280,6 @@ def main():
     # 设置API密钥
     set_key_parser = config_subparsers.add_parser("set-key", help="设置API密钥")
     set_key_parser.add_argument("api_key", type=str, help="API Key")
-    set_key_parser.add_argument("api_secret", type=str, help="API Secret")
 
     # 查看配置
     view_parser = config_subparsers.add_parser("view", help="查看当前配置")
@@ -314,8 +315,10 @@ def main():
 
             for i, img in enumerate(images):
                 output_path = output_dir / f"image_{i+1}.png"
-                if save_image(img["base64"], output_path):
+                if save_image(img, output_path):
                     print(f"OK  已保存: {output_path}")
+                    if img["url"]:
+                        print(f"📦 图像 URL: {img['url']}")
             print(f"✅ 图像生成完成！共生成 {len(images)} 张图像")
         else:
             print(f"ERROR  图像生成失败: {status}")
@@ -323,7 +326,6 @@ def main():
     elif args.subcommand == "config":
         if args.config_subcommand == "set-key":
             update_config("GLM_API_KEY", args.api_key)
-            update_config("GLM_API_SECRET", args.api_secret)
             print("✅ API密钥已更新")
 
         elif args.config_subcommand == "view":
