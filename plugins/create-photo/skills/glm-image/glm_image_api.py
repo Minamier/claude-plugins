@@ -286,7 +286,7 @@ def main():
     generate_parser.add_argument("--samples", type=int, default=1,
                            help="生成数量 (默认: 1)")
     generate_parser.add_argument("--output", type=str, default=None,
-                           help="输出目录 (默认: 桌面/OUT_ai_photo)")
+                           help="输出目录 (默认: 工作区根目录/OUT_ai_photo)")
     generate_parser.add_argument("--filename", type=str, default=None,
                            help="指定文件名 (默认: 使用照片ID)")
 

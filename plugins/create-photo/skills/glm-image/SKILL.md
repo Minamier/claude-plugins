@@ -210,9 +210,14 @@ python glm_image_api.py server --host 0.0.0.0 --port 5001
 
 ### 使用示例
 
-生成一张英雄联盟中影流之主劫的照片：
+#### 生成一张英雄联盟中影流之主劫的照片
 ```bash
 python glm_image_api.py generate "英雄联盟 LOL 中的影流之主 劫，全身像，高质量，4K，游戏风格，黑色和红色为主色调" --style "写实" --width 1024 --height 1024 --filename "LOL劫"
+```
+
+#### 生成一张三角洲游戏海报
+```bash
+python glm_image_api.py generate "科幻未来风格的三角洲游戏海报，A4尺寸。画面中有未来战士、机器人和飞行器，背景是河流入海口的三角洲地貌，融合了高科技建筑和机械装置，使用蓝色、紫色和霓虹色的冷色调，营造出赛博朋克般的未来感。海报包含醒目的游戏标题和科幻风格的文字元素。" --width 1024 --height 768 --style "科幻" --filename "三角洲游戏海报"
 ```
 
 ### 重要提示
