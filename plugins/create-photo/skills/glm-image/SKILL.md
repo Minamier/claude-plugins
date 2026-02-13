@@ -54,7 +54,7 @@ GLM_API_SECRET=""
 # 图像生成配置（默认值）
 DEFAULT_WIDTH="1024"
 DEFAULT_HEIGHT="1024"
-DEFAULT_MODEL="cogview-3"
+DEFAULT_MODEL="glm-image"
 DEFAULT_STYLE="写实"
 
 # 服务器配置
@@ -100,7 +100,8 @@ curl -X GET http://127.0.0.1:5001/ping
   "images": [
     {"base64": "base64_encoded_image_data"}
   ],
-  "count": 1
+  "count": 1,
+  "photo_id": "1234567890abcdef"
 }
 ```
 
@@ -110,7 +111,8 @@ curl -X GET http://127.0.0.1:5001/ping
 glm-image/
 ├── SKILL.md                 # 技能文档（本文档）
 ├── .env.example             # 配置文件模板
-├── glm_image_api.py         # API 服务器主程序
+├── glm_image_api.py         # API 服务器主程序（负责执行API调用）
+├── save_png_from_url.py     # 图像下载和保存模块（负责保存图像）
 ├── .env                     # 配置文件（运行时创建）
 └── scripts/
     ├── install.sh           # 一键安装脚本（Linux/macOS）
@@ -141,9 +143,48 @@ glm-image/
 | negative_prompt | 负向提示词 | 空 |
 | width | 图像宽度 | 1024 |
 | height | 图像高度 | 1024 |
-| model | 使用模型 | cogview-3 |
+| model | 使用模型 | glm-image |
 | style | 图像风格 | 写实 |
 | samples | 生成数量 | 1 |
+
+## 图片保存路径
+
+### 默认保存路径
+技能默认将生成的图片保存到桌面的 `OUT_ai_photo` 文件夹中。路径格式如下：
+- Windows系统：`C:\Users\<用户名>\Desktop\OUT_ai_photo\`
+- macOS系统：`/Users/<用户名>/Desktop/OUT_ai_photo/`
+- Linux系统：`/home/<用户名>/Desktop/OUT_ai_photo/`
+
+### 主动修改图片路径
+用户可以通过 `--output` 参数主动修改图片的保存路径：
+
+```bash
+python glm_image_api.py generate "福字，红色背景" --style "写实" --width 1024 --height 1024 --output "d:\my_images"
+```
+
+## 图像尺寸限制
+
+### 官方允许的最大尺寸
+GLM Image API 官方允许的图像最大尺寸为 2^21 像素（约200万像素）。建议的最大尺寸为 4096x4096，但实际支持的尺寸可能会受到模型和服务器资源的限制。
+
+### 常用尺寸参考
+| 尺寸       | 像素数     | 用途                     |
+|-----------|-----------|--------------------------|
+| 512x512   | 262144    | 小尺寸图像，快速生成     |
+| 1024x1024 | 1048576   | 中等尺寸，平衡质量和速度 |
+| 2048x1024 | 2097152   | 宽屏图像，适合横版展示   |
+| 2048x2048 | 4194304   | 大尺寸图像，高分辨率     |
+
+### 注意事项
+- 较大尺寸的图像生成需要更长的处理时间
+- 网络不稳定可能导致超时，建议使用适当的尺寸
+- 如果生成失败，可以尝试降低分辨率或调整超时设置
+
+### 保存路径说明
+- 如果指定的目录不存在，技能会自动创建该目录
+- 图像文件名格式：`<关键词>_<图片ID后四位>.png`
+- 关键词由AI智能提取，确保不超过5个字
+- 图片ID后四位确保文件名的唯一性
 
 ## 使用方法
 
@@ -156,13 +197,13 @@ glm-image/
 #### 直接生成图像
 
 ```bash
-python glm_image_api.py --generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024
+python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024
 ```
 
 #### 启动服务器
 
 ```bash
-python glm_image_api.py --server --host 0.0.0.0 --port 5001
+python glm_image_api.py server --host 0.0.0.0 --port 5001
 ```
 
 ### 服务器模式

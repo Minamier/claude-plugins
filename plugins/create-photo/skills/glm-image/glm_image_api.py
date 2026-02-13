@@ -93,6 +93,20 @@ def update_config(key, value):
 
 def generate_image(prompt, negative_prompt="", width=1024, height=1024,
                   model="glm-image", style="写实", samples=1):
+    """生成图像
+
+    Args:
+        prompt: 图像描述
+        negative_prompt: 负向提示词（可选）
+        width: 图像宽度（默认：1024，最大：4096）
+        height: 图像高度（默认：1024，最大：4096）
+        model: 使用的模型（默认：glm-image）
+        style: 图像风格（默认：写实）
+        samples: 生成数量（默认：1）
+
+    Returns:
+        (list, str, str): 图像数据列表，状态信息，照片ID
+    """
     """生成图像"""
     if config is None:
         load_config()
@@ -111,8 +125,7 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
         "prompt": prompt,
         "size": f"{width}x{height}",
         "watermark_enabled": False,
-        "quality": "standard",
-        "user_id": "Viguer"
+        "quality": "hd"
     }
 
     # 可选参数
@@ -122,7 +135,7 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
         payload["n"] = samples
 
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=60)
+        response = requests.post(url, json=payload, headers=headers, timeout=240)
         if response.status_code == 200:
             result = response.json()
 
@@ -140,14 +153,16 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
                             "url": None
                         })
 
-                return images, "成功"
+                # 保存照片id
+                photo_id = result.get("id", "")
+                return images, "成功", photo_id
             else:
                 error_msg = result.get("error_msg", "未知错误")
-                return None, error_msg
+                return None, error_msg, None
         else:
-            return None, f"API 请求失败: 状态码 {response.status_code} - {response.text}"
+            return None, f"API 请求失败: 状态码 {response.status_code} - {response.text}", None
     except Exception as e:
-        return None, f"请求异常: {str(e)}"
+        return None, f"请求异常: {str(e)}", None
 
 @app.route("/ping", methods=["GET"])
 def ping():
@@ -156,7 +171,7 @@ def ping():
 
 @app.route("/txt2img", methods=["POST"])
 def txt2img():
-    """文本生成图像接口"""
+    """文生图 API"""
     if config is None:
         load_config()
 
@@ -167,7 +182,7 @@ def txt2img():
         if not prompt:
             return jsonify({"error": "缺少必填参数: prompt"}), 400
 
-        images, status = generate_image(
+        images, status, photo_id = generate_image(
             prompt=prompt,
             negative_prompt=data.get("negative_prompt", ""),
             width=data.get("width", config["default_width"]),
@@ -181,56 +196,14 @@ def txt2img():
             return jsonify({
                 "prompt": prompt,
                 "images": images,
-                "count": len(images)
+                "count": len(images),
+                "photo_id": photo_id
             })
         else:
             return jsonify({"error": status}), 500
 
     except Exception as e:
         return jsonify({"error": f"请求处理失败: {str(e)}"}), 500
-
-def save_image(image_data, output_path):
-    """保存图像到文件"""
-    try:
-        if isinstance(image_data, dict):
-            # 如果是字典，可能包含 base64 或 url
-            if image_data.get("base64"):
-                img_data = base64.b64decode(image_data["base64"])
-                with open(output_path, "wb") as f:
-                    f.write(img_data)
-                return True
-            elif image_data.get("url"):
-                # 从 URL 下载图像
-                response = requests.get(image_data["url"], timeout=30)
-                if response.status_code == 200:
-                    with open(output_path, "wb") as f:
-                        f.write(response.content)
-                    return True
-                else:
-                    print(f"ERROR  下载图像失败: 状态码 {response.status_code}")
-                    return False
-        elif isinstance(image_data, str):
-            # 假设是 base64 字符串
-            if image_data.startswith("http"):
-                # 是 URL，下载图像
-                response = requests.get(image_data, timeout=30)
-                if response.status_code == 200:
-                    with open(output_path, "wb") as f:
-                        f.write(response.content)
-                    return True
-                else:
-                    print(f"ERROR  下载图像失败: 状态码 {response.status_code}")
-                    return False
-            else:
-                # 是 base64 字符串
-                img_data = base64.b64decode(image_data)
-                with open(output_path, "wb") as f:
-                    f.write(img_data)
-                return True
-
-    except Exception as e:
-        print(f"ERROR  保存图像失败: {str(e)}")
-        return False
 
 def main():
     """主函数"""
@@ -299,7 +272,7 @@ def main():
         print(f"🎯 风格: {args.style}")
         print(f"📏 尺寸: {args.width}x{args.height}")
 
-        images, status = generate_image(
+        images, status, photo_id = generate_image(
             prompt=args.prompt,
             negative_prompt=args.negative,
             width=args.width,
@@ -310,15 +283,19 @@ def main():
         )
 
         if images:
+            # 导入save_png_from_url模块
+            import save_png_from_url
+
+            # 根据提示词提取关键词（AI判断）
+            keywords = extract_keywords(args.prompt)
+
+            # 保存图像
             output_dir = Path(args.output)
             output_dir.mkdir(exist_ok=True)
 
             for i, img in enumerate(images):
-                output_path = output_dir / f"image_{i+1}.png"
-                if save_image(img, output_path):
-                    print(f"OK  已保存: {output_path}")
-                    if img["url"]:
-                        print(f"📦 图像 URL: {img['url']}")
+                saved_path = save_png_from_url.save_image_from_dict(img, photo_id, keywords, str(output_dir))
+
             print(f"✅ 图像生成完成！共生成 {len(images)} 张图像")
         else:
             print(f"ERROR  图像生成失败: {status}")
@@ -342,6 +319,36 @@ def main():
     else:
         parser.print_help()
 
+def extract_keywords(prompt):
+    """
+    提取关键词（不超过5个字）
+
+    Args:
+        prompt: 用户输入的提示词
+
+    Returns:
+        str: 提取的关键词（不超过5个字）
+    """
+    # AI智能提取关键词
+    import re
+
+    # 常见核心词汇优先匹配列表
+    priority_keywords = ["福字", "春联", "灯笼", "鞭炮", "年夜饭", "压岁钱", "春晚"]
+
+    # 去除标点符号和空格
+    cleaned_prompt = re.sub(r'[^\u4e00-\u9fff]', '', prompt)
+
+    # 优先匹配常见核心词汇
+    for kw in priority_keywords:
+        if kw in cleaned_prompt:
+            return kw[:5]
+
+    # 如果没有匹配到常见核心词汇，使用默认方法提取
+    if cleaned_prompt:
+        return cleaned_prompt[:5]
+
+    return "图像"
+
 if __name__ == "__main__":
     # 设置控制台编码为UTF-8
     import sys
@@ -355,6 +362,6 @@ if __name__ == "__main__":
         from flask import Flask
     except ImportError:
         print("WARN   缺少依赖库，正在安装...")
-        os.system(f"{sys.executable} -m pip install python-dotenv flask requests")
+        os.system(f"{sys.executable} -m pip install python-dotenv flask requests pillow")
 
     main()
