@@ -217,16 +217,10 @@ def txt2img():
 
 def main():
     """主函数"""
-    # 检查是否是config子命令
-    is_config_command = False
-    for arg in sys.argv:
-        if "config" in arg:
-            is_config_command = True
-            break
-
-    # 对于config子命令，只进行基础配置，不检查API密钥
-    if is_config_command:
-        global config
+    # 处理命令行参数之前先处理配置
+    # 检查是否是帮助命令
+    if "--help" in sys.argv or "-h" in sys.argv:
+        # 为了显示帮助信息，我们需要初始化一个基础配置
         if not ENV_FILE.exists():
             if ENV_EXAMPLE_FILE.exists():
                 with open(ENV_EXAMPLE_FILE, "r", encoding="utf-8") as f:
@@ -238,8 +232,10 @@ def main():
                 print("ERROR 配置文件模板不存在: .env.example")
                 sys.exit(1)
 
+        from dotenv import load_dotenv
         load_dotenv(ENV_FILE)
 
+        global config
         config = {
             "api_key": "",
             "default_width": int(os.getenv("DEFAULT_WIDTH", "1024")),

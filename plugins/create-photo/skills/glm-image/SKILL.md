@@ -297,6 +297,81 @@ TypeError: argument should be a str or an os.PathLike object where __fspath__ re
 - 程序会自动处理未提供路径的情况
 - 或者明确指定输出路径：`--output "d:\my_images"`
 
+### 5. HTTP API 调用问题
+
+**问题描述：**
+使用 curl 或 PowerShell 调用 /txt2img 接口时，出现中文字符编码问题
+
+**解决方法：**
+
+1. **使用 PowerShell 调用（推荐）：**
+```powershell
+$data = @{
+    prompt = "a cute cartoon cat, white background"
+    style = "cartoon"
+    width = 1024
+    height = 1024
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "http://127.0.0.1:5001/txt2img" -Method Post -ContentType "application/json" -Body $data
+    $response | ConvertTo-Json -Depth 3
+} catch {
+    Write-Host "Error: $_"
+    Write-Host "StatusCode: $($_.Exception.Response.StatusCode)"
+    Write-Host "StatusDescription: $($_.Exception.Response.StatusDescription)"
+    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd()
+    Write-Host "ResponseBody: $responseBody"
+}
+```
+
+2. **使用 curl 调用（英文提示词）：**
+```bash
+curl -X POST http://127.0.0.1:5001/txt2img -H "Content-Type: application/json" -d '{"prompt":"a cute cartoon cat, white background","style":"cartoon","width":1024,"height":1024}'
+```
+
+**注意事项：**
+- 使用英文提示词可以避免字符编码问题
+- 如果必须使用中文，请确保使用正确的编码格式
+- PowerShell 比 curl 更适合处理中文内容的请求
+
+### 6. PowerShell 命令执行问题
+
+**问题描述：**
+PowerShell 脚本执行时出现语法错误
+
+**解决方法：**
+1. **确保使用正确的引号：**
+   - 字符串使用双引号或单引号包裹
+   - 在 PowerShell 中，单引号字符串不会解析变量
+2. **避免使用中文标点符号：**
+   - 使用英文标点符号，特别是引号和括号
+3. **设置执行策略：**
+   如果出现执行策略问题，使用以下命令：
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+### 7. 服务器健康检查
+
+**使用方法：**
+```bash
+curl -X GET http://127.0.0.1:5001/ping
+```
+
+**预期响应：**
+```json
+{"status": "ok", "message": "GLM Image API 服务正常运行"}
+```
+
+如果无法连接到服务器，请检查以下几点：
+- 服务器是否正在运行
+- 防火墙设置是否阻止了访问
+- 网络连接是否正常
+
 ### 2. 服务器无法启动
 
 **错误信息：**
