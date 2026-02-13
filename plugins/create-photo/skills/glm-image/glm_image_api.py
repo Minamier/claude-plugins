@@ -170,6 +170,10 @@ def generate_image(prompt, negative_prompt="", width=1024, height=1024,
                 error_msg = result.get("error_msg", "未知错误")
                 return None, error_msg, None
         else:
+            print(f"DEBUG 响应状态码: {response.status_code}")
+            print(f"DEBUG 响应内容: {response.text}")
+            print(f"DEBUG 请求头: {headers}")
+            print(f"DEBUG 请求体: {payload}")
             return None, f"API 请求失败: 状态码 {response.status_code} - {response.text}", None
     except Exception as e:
         return None, f"请求异常: {str(e)}", None
@@ -268,7 +272,7 @@ def main():
 
     # 直接生成模式
     generate_parser = subparsers.add_parser("generate", help="直接生成图像")
-    generate_parser.add_argument("prompt", type=str, help="图像描述")
+    generate_parser.add_argument("--prompt", type=str, required=True, help="图像描述")
     generate_parser.add_argument("--negative", type=str, default="",
                            help="负向提示词")
     generate_parser.add_argument("--width", type=int, default=config["default_width"],

@@ -11,7 +11,7 @@ description: 使用GLM模型根据用户描述生成符合要求的图片的技�
 
 ## API 文档参考
 
-本技能基于字节跳动火山引擎的GLM图像生成API，详细文档请参考：
+本技能基于智谱AI（GLM）的图像生成API，详细文档请参考：
 [GLM图像生成API文档](https://docs.bigmodel.cn/api-reference/模型-api/图像生成)
 
 ## 快速开始
@@ -92,6 +92,22 @@ curl -X GET http://127.0.0.1:5001/ping
 '
 ```
 
+### 文本生成图像（通过本地服务器）
+
+```bash
+  curl --request POST \
+  --url http://127.0.0.1:5001/txt2img \
+  --header 'Content-Type: application/json' \
+  --data '
+{
+  "prompt": "一只可爱的卡通猫，白色背景",
+  "style": "卡通",
+  "width": 1024,
+  "height": 1024
+}
+'
+```
+
 **响应：**
 ```json
 {
@@ -157,7 +173,7 @@ glm-image/
 用户可以通过 `--output` 参数主动修改图片的保存路径：
 
 ```bash
-python glm_image_api.py generate "福字，红色背景" --style "写实" --width 1024 --height 1024 --output "d:\my_images"
+python glm_image_api.py generate --prompt "福字，红色背景" --style "写实" --width 1024 --height 1024 --output "d:\my_images"
 ```
 
 ## 图像尺寸限制
@@ -193,12 +209,12 @@ GLM Image API 官方允许的图像最大尺寸为 2^21 像素（约200万像素
 
 用户没有提供保存路径时（默认保存到工作区根目录的OUT_ai_photo文件夹）：
 ```bash
-python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫"
+python glm_image_api.py generate --prompt "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫"
 ```
 
 用户提供保存路径时：
 ```bash
-python glm_image_api.py generate "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫" --output "d:\my_images"
+python glm_image_api.py generate --prompt "一只可爱的卡通猫" --style "卡通" --width 1024 --height 1024 --filename "可爱的卡通猫" --output "d:\my_images"
 ```
 
 ### 服务器模式
@@ -212,12 +228,12 @@ python glm_image_api.py server --host 0.0.0.0 --port 5001
 
 #### 生成一张英雄联盟中影流之主劫的照片
 ```bash
-python glm_image_api.py generate "英雄联盟 LOL 中的影流之主 劫，全身像，高质量，4K，游戏风格，黑色和红色为主色调" --style "写实" --width 1024 --height 1024 --filename "LOL劫"
+python glm_image_api.py generate --prompt "英雄联盟 LOL 中的影流之主 劫，全身像，高质量，4K，游戏风格，黑色和红色为主色调" --style "写实" --width 1024 --height 1024 --filename "LOL劫"
 ```
 
 #### 生成一张三角洲游戏海报
 ```bash
-python glm_image_api.py generate "科幻未来风格的三角洲游戏海报，A4尺寸。画面中有未来战士、机器人和飞行器，背景是河流入海口的三角洲地貌，融合了高科技建筑和机械装置，使用蓝色、紫色和霓虹色的冷色调，营造出赛博朋克般的未来感。海报包含醒目的游戏标题和科幻风格的文字元素。" --width 1024 --height 768 --style "科幻" --filename "三角洲游戏海报"
+python glm_image_api.py generate --prompt "科幻未来风格的三角洲游戏海报，A4尺寸。画面中有未来战士、机器人和飞行器，背景是河流入海口的三角洲地貌，融合了高科技建筑和机械装置，使用蓝色、紫色和霓虹色的冷色调，营造出赛博朋克般的未来感。海报包含醒目的游戏标题和科幻风格的文字元素。" --width 1024 --height 768 --style "科幻" --filename "三角洲游戏海报"
 ```
 
 ### 重要提示
@@ -227,8 +243,13 @@ python glm_image_api.py generate "科幻未来风格的三角洲游戏海报，A
 - 避免在提示词中使用不常见的符号或复杂格式
 - 确保提示词清晰简洁，明确描述你想要生成的图像
 
+**参数格式要求：**
+- 所有参数必须使用 -- 前缀，包括 --prompt 参数
+- 禁止使用位置参数，所有参数必须明确指定选项名称
+- 这种格式提高了命令的可读性和易用性，符合标准命令行工具的风格
+
 **参数顺序：**
-- 提示词必须是第一个位置参数
+- 参数顺序可以任意调整，但建议保持逻辑顺序，如先指定核心参数（--prompt、--style），再指定可选参数（--width、--height、--filename、--output）
 - 所有选项参数（如 --style、--width、--height、--filename、--output）必须放在提示词之后
 - 确保每个选项参数与对应的值之间有适当的空格
 
