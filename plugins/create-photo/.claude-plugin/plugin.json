@@ -3,10 +3,5 @@
   "description": "包含数个ai生成图片的插件",
   "version": "1.0.0",
   "author": "Vigoer",
-  "contact": "",
-  "homepage": "",
-  "dependencies": {
-    "python": ">=3.7",
-    "libraries": ["python-dotenv", "flask", "requests"]
-  }
+  "homepage": ""
 }
