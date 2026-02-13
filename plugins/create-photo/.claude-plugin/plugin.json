@@ -2,6 +2,7 @@
   "name": "create-photo",
   "description": "包含数个ai生成图片的插件",
   "version": "1.0.0",
-  "author": "Vigoer",
-  "homepage": ""
+  "author": {
+    "name":"Vigoer"
+  }
 }
