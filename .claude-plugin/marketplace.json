@@ -30,6 +30,14 @@
         "name": "Vigoer"
       },
       "repository": "https://github.com/Minamier/claude-plugins.git"
+    },
+    {
+      "name": "create-photo",
+      "source": "./plugins/create-photo",
+      "version": "0.1.0",
+      "author":{
+        "name": "Vigoer"
+      }
     }
   ]
   
